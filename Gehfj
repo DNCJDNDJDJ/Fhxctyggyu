@@ -1,0 +1,945 @@
+local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+
+-- Creating the Window
+local Window = WindUI:CreateWindow({
+    Title = "LexusHub 1.1",
+    Icon = "wind",
+    Author = "MadedByKira |Discord| gg/9Mjf8YFbfb",
+    Folder = "BABFT_AutoFarm",
+    Size = UDim2.fromOffset(500, 400),
+    Transparent = false,
+    Theme = "Dark",
+    SideBarWidth = 150,
+})
+
+Window:EditOpenButton({
+    Title = "Open LexusHub",
+    Icon = "menu",
+    CornerRadius = UDim.new(0, 10),
+    StrokeThickness = 2,
+    Color = ColorSequence.new(
+        Color3.fromHex("4CAF50"), 
+        Color3.fromHex("8BC34A")
+    ),
+    Draggable = true,
+})
+
+-- Create AutoFarm Tab
+local AutoFarmTab = Window:Tab({
+    Title = "🚜AutoFarm",
+    Icon = "zap",
+    Desc = "Automatically completes stages and buys chests."
+})
+
+-- Global AutoFarm Settings
+getgenv().TreasureAutoFarm = {
+    Enabled = false,
+    Teleport = 1, -- Delay between teleporting
+    TimeBetweenRuns = 5, -- Time to wait before restarting auto-farm
+    SelectedChest = "Common Chest"
+}
+
+-- AutoFarm Function
+local function autoFarm(currentRun)
+    -- Ensure player character exists
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+
+    -- Variables
+    local Character = LocalPlayer.Character
+    local NormalStages = Workspace.BoatStages.NormalStages
+
+    -- Go to each stage
+    for i = 1, 10 do
+        if not getgenv().TreasureAutoFarm.Enabled then return end
+
+        local Stage = NormalStages["CaveStage" .. i]
+        local DarknessPart = Stage and Stage:FindFirstChild("DarknessPart")
+
+        if DarknessPart then
+            -- Teleport to next stage
+            print("Teleporting to Stage " .. i)
+            Character.HumanoidRootPart.CFrame = DarknessPart.CFrame
+
+            -- Create a temp part under you
+            local Part = Instance.new("Part", LocalPlayer.Character)
+            Part.Anchored = true
+            Part.Position = LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0, 6, 0)
+
+            -- Wait and remove temp part
+            wait(getgenv().TreasureAutoFarm.Teleport)
+            Part:Destroy()
+        end
+    end
+
+    -- Teleport to the end
+    print("Teleporting to the end")
+    repeat wait()
+        Character.HumanoidRootPart.CFrame = NormalStages.TheEnd.GoldenChest.Trigger.CFrame
+    until Lighting.ClockTime ~= 14
+
+    -- Wait for respawn
+    local Respawned = false
+    LocalPlayer.CharacterAdded:Connect(function()
+        Respawned = true
+    end)
+
+    repeat wait() until Respawned
+    wait(getgenv().TreasureAutoFarm.TimeBetweenRuns)
+    print("AutoFarm: Run " .. currentRun .. " completed")
+end
+
+-- Toggle AutoFarm in AutoFarm Tab
+AutoFarmTab:Toggle({
+    Title = "🚜Enable AutoFarm",
+    Default = false,
+    Callback = function(state)
+        getgenv().TreasureAutoFarm.Enabled = state
+        print("AutoFarm Enabled: " .. tostring(state))
+
+        if state then
+            local autoFarmRun = 1
+            while getgenv().TreasureAutoFarm.Enabled do
+                print("Starting AutoFarm: Run " .. autoFarmRun)
+                autoFarm(autoFarmRun)
+                autoFarmRun = autoFarmRun + 1
+                wait()
+            end
+        end
+    end
+})
+
+AutoFarmTab:Toggle({
+    Title = "Auto Claim Gold (get gold when farming)",
+    Default = false,
+    Callback = function(state)
+        getgenv().AutoClaimGold = state
+        while getgenv().AutoClaimGold do
+            workspace:WaitForChild("ClaimRiverResultsGold"):FireServer()
+            task.wait(2.6) -- Adjust delay to prevent spam
+        end
+    end
+})
+
+-- Chest Selection Dropdown
+local ChestList = {"Common Chest", "Uncommon Chest", "Rare Chest", "Epic Chest", "Legendary Chest"}
+
+AutoFarmTab:Dropdown({
+    Title = "💰Select Chest",
+    Values = ChestList,  -- Corrected to 'Values'
+    Value = "Common Chest",  -- Default value
+    Callback = function(value)
+        getgenv().TreasureAutoFarm.SelectedChest = value
+        print("Selected Chest: " .. value)
+    end
+})
+
+-- Buy Chest Button
+AutoFarmTab:Button({
+    Title = "💰Buy Chest",
+    Desc = "Purchase the selected chest",
+    Callback = function()
+        -- Set the chest name from the selected value
+        local chestName = getgenv().TreasureAutoFarm.SelectedChest
+        
+        -- Corrected invocation for buying a chest
+        workspace.ItemBoughtFromShop:InvokeServer(chestName, 1)
+        
+        print("Attempting to buy: " .. chestName)
+    end
+})
+
+AutoFarmTab:Dropdown({
+    Title = "Select Chest",
+    Values = { "Common Chest", "Uncommon Chest", "Rare Chest", "Epic Chest", "Legendary Chest" },
+    Value = selectedChest,
+    Callback = function(value)
+        selectedChest = value  -- Update selected chest when dropdown value changes
+        print("Selected Chest: " .. selectedChest)
+    end
+})
+
+AutoFarmTab:Toggle({
+    Title = "Enable AutoChest",
+    Default = false,  -- Default state is off
+    Callback = function(state)
+        autoChestEnabled = state
+        print("AutoChest Enabled: " .. tostring(state))
+
+        -- Start or stop the chest buying process based on the toggle state
+        if autoChestEnabled then
+            while autoChestEnabled do
+                -- Invoke the server to buy the selected chest
+                local args = {
+                    [1] = selectedChest,  -- Chest type (like "Common Chest")
+                    [2] = 1  -- Quantity (assuming 1 chest is bought per call)
+                }
+                workspace:WaitForChild("ItemBoughtFromShop"):InvokeServer(unpack(args))
+
+                -- Wait for 6 seconds before buying again
+                wait(6)
+            end
+        end
+    end
+})
+
+local antiAfkEnabled = false  -- Initial state for Anti-AFK
+
+AutoFarmTab:Toggle({
+    Title = "Enable Anti-AFK",
+    Default = false,  -- Default state is off
+    Callback = function(state)
+        antiAfkEnabled = state
+        print("Anti-AFK Enabled: " .. tostring(state))
+
+        -- Enable or disable Anti-AFK based on the toggle state
+        if antiAfkEnabled then
+            -- Disable AFK connections to prevent getting kicked
+            for _, connection in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
+                connection:Disable()
+            end
+        else
+            -- Re-enable AFK detection (if needed, but generally disabling connections should work)
+            for _, connection in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
+                connection:Enable()
+            end
+        end
+    end
+})
+
+local infiniteYieldEnabled = false
+
+-- Infinite Yield Toggle Button
+AutoFarmTab:Toggle({
+    Title = "Enable Infinite Yield",
+    Default = false,  -- Default state is off
+    Callback = function(state)
+        infiniteYieldEnabled = state
+        print("Infinite Yield Enabled: " .. tostring(state))
+
+        -- If the state is true, load Infinite Yield
+        if infiniteYieldEnabled then
+            -- Load Infinite Yield script from URL
+            loadstring(game:HttpGet('https://raw.githubusercontent.com/DarkNetworks/Infinite-Yield/main/latest.lua'))()
+            print("Infinite Yield has been loaded.")
+        else
+            -- If Infinite Yield is disabled, you may choose to "unload" it,
+            -- but note that Infinite Yield may not provide an explicit unload function.
+            -- To truly "disable" Infinite Yield, you would need to either reset the game or manually remove it.
+            print("Infinite Yield disabled.")
+        end
+    end
+})
+
+-- Buy Pine Tree Button
+AutoFarmTab:Button({
+    Title = "Buy Pine Tree",
+    Desc = "Purchase a Pine Tree",
+    Callback = function()
+        -- Correct invocation for buying the Pine Tree
+        workspace.ItemBoughtFromShop:InvokeServer("PineTree", 1)
+        
+        print("Attempting to buy: PineTree")
+    end
+})
+
+-- Teams Tab
+local TeamsTab = Window:Tab({
+    Title = "Teams",
+    Icon = "group",
+    Desc = "Teleport to different teams."
+})
+
+local teleportLocations = {
+    ["White Team"] = Vector3.new(-50.11, -8.19, -591.96),
+    ["Black Team"] = Vector3.new(-582.79, -8.19, -70.03),
+    ["Red Team"] = Vector3.new(473.08, -8.18, -65.08),
+    ["Blue Team"] = Vector3.new(472.09, -8.18, 300.86),
+    ["Pink Team"] = Vector3.new(471.79, -8.18, 646.15),
+    ["Green Team"] = Vector3.new(-579.99, -8.20, 294.70),
+    ["Yellow Team"] = Vector3.new(-589.91, -8.18, 640.32)
+}
+
+-- Create Teams Dropdown
+TeamsTab:Dropdown({
+    Title = "Select Team",  -- Title of the dropdown
+    Values = {"White Team", "Black Team", "Red Team", "Blue Team", "Pink Team", "Green Team", "Yellow Team"},
+    Value = "White Team",  -- Default value
+    Callback = function(selectedTeam)
+        local selectedPos = teleportLocations[selectedTeam]
+        if selectedPos then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(selectedPos)
+        end
+    end
+})
+
+-- Stages Tab
+local StageTab = Window:Tab({
+    Title = "Stages",
+    Icon = "zap",
+    Desc = "Teleport to different stages."
+})
+
+local stageLocations = {
+    ["Stage 1"] = Vector3.new(-54.14, 55.94, 1390.75),
+    ["Stage 2"] = Vector3.new(-13.16, 51.93, 2156.50),
+    ["Stage 3"] = Vector3.new(-17.75, 53.51, 2922.12),
+    ["Stage 4"] = Vector3.new(-59.61, 54.41, 3693.28),
+    ["Stage 5"] = Vector3.new(-69.58, 55.91, 4467.19),
+    ["Stage 6"] = Vector3.new(-26.93, 57.86, 5236.96),
+    ["Stage 7"] = Vector3.new(-38.51, 59.45, 6014.96),
+    ["Stage 8"] = Vector3.new(-60.96, 61.04, 7542.84),
+    ["Stage 9"] = Vector3.new(-12.10, 66.29, 8314.14)
+}
+
+-- Create Stages Dropdown
+StageTab:Dropdown({
+    Title = "Select Stage",  -- Title of the dropdown
+    Values = {"Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6", "Stage 7", "Stage 8", "Stage 9"},
+    Value = "Stage 1",  -- Default value
+    Callback = function(selectedStage)
+        local selectedPos = stageLocations[selectedStage]
+        if selectedPos then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(selectedPos)
+        end
+    end
+})
+
+local PlayerTab = Window:Tab({
+    Title = "Player",
+    Icon = "user",
+    Desc = "Player-related features."
+})
+
+-- INFINITE JUMP TOGGLE
+local infiniteJumpEnabled = false
+PlayerTab:Toggle({
+    Title = "Infinite Jump (Hold Space)",
+    Default = false,
+    Callback = function(state)
+        infiniteJumpEnabled = state
+        print("Infinite Jump Enabled: " .. tostring(state))
+
+        if infiniteJumpEnabled then
+            game:GetService("UserInputService").JumpRequest:Connect(function()
+                if infiniteJumpEnabled then
+                    game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+                end
+            end)
+        end
+    end
+})
+
+-- INFINITE ZOOM TOGGLE
+local infiniteZoomEnabled = false
+PlayerTab:Toggle({
+    Title = "Infinite Zoom",
+    Default = false,
+    Callback = function(state)
+        infiniteZoomEnabled = state
+        print("Infinite Zoom Enabled: " .. tostring(state))
+
+        if infiniteZoomEnabled then
+            game.Players.LocalPlayer.CameraMaxZoomDistance = 999999
+        else
+            game.Players.LocalPlayer.CameraMaxZoomDistance = 400  -- Reset to default
+        end
+    end
+})
+
+-- NOCLIP TOGGLE
+local noclipEnabled = false
+local noclipConnection
+PlayerTab:Toggle({
+    Title = "Noclip",
+    Default = false,
+    Callback = function(state)
+        noclipEnabled = state
+        print("Noclip Enabled: " .. tostring(state))
+
+        local runService = game:GetService("RunService")
+        if noclipEnabled then
+            noclipConnection = runService.Stepped:Connect(function()
+                for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end)
+        else
+            if noclipConnection then
+                noclipConnection:Disconnect()
+            end
+        end
+    end
+})
+
+-- CLICK TO TELEPORT TOGGLE
+local clickTPEnabled = false
+local userInputService = game:GetService("UserInputService")
+local mouse = game.Players.LocalPlayer:GetMouse()
+
+PlayerTab:Toggle({
+    Title = "Click to Teleport",
+    Default = false,
+    Callback = function(state)
+        clickTPEnabled = state
+        print("Click to Teleport Enabled: " .. tostring(state))
+    end
+})
+
+mouse.Button1Down:Connect(function()
+    if clickTPEnabled then
+        local targetPosition = mouse.Hit.p
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            character.HumanoidRootPart.CFrame = CFrame.new(targetPosition + Vector3.new(0, 3, 0))
+        end
+    end
+end)
+
+-- REJOIN SERVER BUTTON
+PlayerTab:Button({
+    Title = "Rejoin Server",
+    Callback = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+    end
+})
+
+-- JOIN A DIFFERENT SERVER BUTTON
+PlayerTab:Button({
+    Title = "Join Another Server",
+    Callback = function()
+        local HttpService = game:GetService("HttpService")
+        local TeleportService = game:GetService("TeleportService")
+        local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
+        
+        for _, server in ipairs(servers) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+        print("No available servers found.")
+    end
+})
+
+PlayerTab:Slider({
+    Title = "Character Size",
+    Value = {
+        Min = 1,
+        Max = 10,
+        Default = 1,
+    },
+    Callback = function(value)
+        local character = game.Players.LocalPlayer.Character
+        if character then
+            for _, part in pairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Size = Vector3.new(value, value, value) -- Adjusts character size
+                end
+            end
+            character.Humanoid.HipHeight = value * 2 -- Adjusts hip height to match size
+        end
+        print("Character size set to: " .. value)
+    end
+})
+
+local defaultSize = 1 -- Default character size
+local defaultWalkSpeed = 16 -- Default WalkSpeed
+
+PlayerTab:Button({
+    Title = "Reset Size",
+    Desc = "Reset character size to default",
+    Callback = function()
+        local character = game.Players.LocalPlayer.Character
+        if character then
+            for _, part in pairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Size = Vector3.new(defaultSize, defaultSize, defaultSize)
+                end
+            end
+            character.Humanoid.HipHeight = defaultSize * 2
+        end
+        print("Character size reset to default.")
+    end
+})
+
+PlayerTab:Slider({
+    Title = "WalkSpeed",
+    Value = {
+        Min = 16,
+        Max = 200,
+        Default = defaultWalkSpeed,
+    },
+    Callback = function(value)
+        local humanoid = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = value
+        end
+        print("WalkSpeed set to: " .. value)
+    end
+})
+
+PlayerTab:Button({
+    Title = "Reset Settings",
+    Desc = "Reset character size and WalkSpeed to default",
+    Callback = function()
+        local character = game.Players.LocalPlayer.Character
+        if character then
+            for _, part in pairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Size = Vector3.new(defaultSize, defaultSize, defaultSize)
+                end
+            end
+            character.Humanoid.HipHeight = defaultSize * 2
+            character.Humanoid.WalkSpeed = defaultWalkSpeed
+        end
+        print("Character settings reset to default.")
+    end
+})
+
+PlayerTab:Toggle({
+    Title = "Remove Water Visual",
+    Default = false,
+    Callback = function(state)
+        if state then
+            -- Find and remove WaterMask part/model in the game
+            local waterMask = workspace:FindFirstChild("WaterMask")
+            if waterMask then
+                waterMask:Destroy() -- Deletes the WaterMask model/part
+                print("Water Mask removed.")
+            end
+        else
+            -- Optionally restore the WaterMask (if it's recreated in a future update)
+            print("Water Mask is not restored automatically.")
+        end
+    end
+})
+
+PlayerTab:Toggle({
+    Title = "No Water Damage",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            game.Workspace.Water.CanTouch = false
+        else
+            game.Workspace.Water.CanTouch = true
+        end
+    end
+})
+
+local QuestTab = Window:Tab({
+    Title = "Quests",
+    Icon = "target",
+    Desc = "Automatically complete quests."
+})
+
+-- List of available quests
+local quests = {
+    "Target Quest",
+    "Football - Wip"
+}
+
+-- List of teams
+local teams = {
+    "Red Team",
+    "Blue Team",
+    "Yellow Team",
+    "White Team",
+    "Black Team",
+    "Magenta Team",
+    "Green Team"
+}
+
+-- Quest Target Locations
+local questTargets = {
+    ["Target Quest"] = {
+        ["Red Team"] = Vector3.new(104.88, 141.98, -68.10),
+        ["Blue Team"] = Vector3.new(104.95, 141.04, 291.04),
+        ["Yellow Team"] = Vector3.new(209.81, 143.43, 643.03),
+        ["White Team"] = Vector3.new(51.43, 140.95, 228.36),
+        ["Black Team"] = Vector3.new(209.91, 145.44, 73.85),
+        ["Magenta Team"] = Vector3.new(105.10, 141.53, 649.25),
+        ["Green Team"] = Vector3.new(210.82, 142.38, 284.76)
+    },
+    ["Football Quest"] = Vector3.new(120.32, 140.50, 350.40) -- Example Goal Position
+}
+
+local TweenService = game:GetService("TweenService")
+local player = game.Players.LocalPlayer
+
+-- Function to teleport smoothly
+local function teleportToQuest()
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local selectedQuest = getgenv().SelectedQuest or "Target Quest"
+        local selectedTeam = getgenv().SelectedTeam or "Red Team"
+
+        local targetPosition
+        
+        if selectedQuest == "Target Quest" then
+            targetPosition = questTargets["Target Quest"][selectedTeam]
+        else
+            targetPosition = questTargets[selectedQuest]
+        end
+        
+        if targetPosition then
+            local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            local tween = TweenService:Create(player.Character.HumanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
+            tween:Play()
+
+            -- UI Notification
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "Teleporting...",
+                Text = "Auto-completing " .. selectedQuest,
+                Duration = 3
+            })
+        end
+    end
+end
+
+-- Dropdown to select quest
+QuestTab:Dropdown({
+    Title = "Select Quest",
+    Values = quests,
+    Callback = function(selected)
+        getgenv().SelectedQuest = selected
+    end
+})
+
+-- Dropdown to select team
+QuestTab:Dropdown({
+    Title = "Select Team",
+    Values = teams,
+    Callback = function(selected)
+        getgenv().SelectedTeam = selected
+    end
+})
+
+-- Toggle to auto-complete the quest
+QuestTab:Toggle({
+    Title = "Auto Complete Quest",
+    Default = false,
+    Callback = function(state)
+        getgenv().AutoQuest = state
+        while getgenv().AutoQuest do
+            teleportToQuest()
+            wait(5) -- Wait 5 seconds before teleporting again
+        end
+    end
+})
+
+local GoldTab = Window:Tab({
+    Title = "Gold",
+    Icon = "coins",
+    Desc = "Modify your gold amount visually."
+})
+
+GoldTab:Toggle({
+    Title = "Inf Gold [Visual]",
+    Default = false,
+    Callback = function(state)
+        local plr = game.Players.LocalPlayer
+
+        if state then
+            while state do
+                plr.Data.Gold.Value += 2363424325326
+                wait(1) -- Prevents excessive updates
+            end
+        end
+    end
+})
+
+local TrollTab = Window:Tab({
+    Title = "Troll",
+    Icon = "user",
+    Desc = "Fun Troll Scripts"
+})
+
+-- Jerk Off (R15) Toggle
+TrollTab:Toggle({
+    Title = "Jerk Off (R15)",
+    Default = false,
+    Callback = function(state)
+        if state then
+            -- Run the script when enabled
+            loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-jerk-off-2595"))()
+        else
+            print("Jerk Off disabled")
+        end
+    end
+})
+
+-- Jerk Off (R6) Toggle
+TrollTab:Toggle({
+    Title = "Jerk Off (R6)",
+    Default = false,
+    Callback = function(state)
+        if state then
+            -- Run the script when enabled
+            loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-jerk-off-25958"))()
+        else
+            print("Jerk Off disabled")
+        end
+    end
+})
+
+-- Function to get all players' names
+local function getPlayers()
+    local players = {}
+    for _, player in pairs(game.Players:GetPlayers()) do
+        table.insert(players, player.Name)
+    end
+    return players
+end
+
+-- Variable to store the selected player
+local selectedPlayer = nil
+
+-- Player Dropdown (Auto Updates)
+local PlayerDropdown = TrollTab:Dropdown({
+    Title = "Select Player",
+    Values = getPlayers(),
+    Value = "",
+    Callback = function(value)
+        selectedPlayer = value
+        print("Selected Player: " .. value)
+    end
+})
+
+-- Auto-update player list
+game.Players.PlayerAdded:Connect(function()
+    PlayerDropdown:Refresh(getPlayers(), false)
+end)
+
+game.Players.PlayerRemoving:Connect(function()
+    PlayerDropdown:Refresh(getPlayers(), false)
+end)
+
+-- Buttons Data (R6 & R15 Versions)
+local buttons = {
+    {name = " Bang V2", r6 = "https://pastebin.com/raw/aPSHMV6K", r15 = "https://pastebin.com/raw/1ePMTt9n"},
+    {name = " Get Banged", r6 = "https://pastebin.com/raw/zHbw7ND1", r15 = "https://pastebin.com/raw/7hvcjDnW"},
+    {name = " Suck", r6 = "https://pastebin.com/raw/SymCfnAW", r15 = "https://pastebin.com/raw/p8yxRfr4"},
+    {name = " Get Suc", r6 = "https://pastebin.com/raw/FPu4e2Qh", r15 = "https://pastebin.com/raw/DyPP2tAF"},
+    {name = " Jerk", r6 = "https://pastefy.app/wa3v2Vgm/raw", r15 = "https://pastefy.app/YZoglOyJ/raw"}
+}
+
+-- Function to teleport YOU to the selected player
+local function teleportToPlayer(playerName)
+    local localPlayer = game.Players.LocalPlayer
+    local targetPlayer = game.Players:FindFirstChild(playerName)
+
+    if targetPlayer and targetPlayer.Character and localPlayer.Character then
+        local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local localHRP = localPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+        if targetHRP and localHRP then
+            localHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 2) -- Teleport slightly in front of them
+        end
+    end
+end
+
+-- Create buttons for each troll action
+for _, buttonData in ipairs(buttons) do
+    TrollTab:Button({
+        Title = buttonData.name,
+        Callback = function()
+            if not selectedPlayer then
+                WindUI:Notify({
+                    Title = "Error",
+                    Content = "Please select a player first!",
+                    Icon = "alert-circle",
+                    Duration = 3
+                })
+                return
+            end
+
+            -- Teleport to selected player first
+            teleportToPlayer(selectedPlayer)
+
+            -- Run troll script on yourself
+            local localPlayer = game.Players.LocalPlayer
+            local isR6 = localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") and localPlayer.Character.Humanoid.RigType == Enum.HumanoidRigType.R6
+            local scriptUrl = isR6 and buttonData.r6 or buttonData.r15
+
+            print("Running script on YOU after teleporting to " .. selectedPlayer)
+            loadstring(game:HttpGet(scriptUrl))()
+        end
+    })
+end
+
+local Tabs = {
+    Server = Window:Tab({
+        Title = "Server",
+        Icon = "server",
+        Desc = "Server Optimizations"
+    })
+}
+
+-- --- Server Tab (Server Optimizations, Anti-Ban, Anti-Kick, Anti-Spam) ---
+
+-- No Lag Toggle
+local noLag = false
+Tabs.Server:Toggle({
+    Title = "No Lag",
+    Default = false,
+    Callback = function(state)
+        noLag = state
+        if noLag then
+            -- Apply "No Lag" settings (lower quality to reduce lag)
+            game:GetService("UserSettings"):GetService("GameSettings").GameQualityLevel = Enum.GameQualityLevel.Level1
+        else
+            -- Restore the default settings
+            game:GetService("UserSettings"):GetService("GameSettings").GameQualityLevel = Enum.GameQualityLevel.Level3
+        end
+    end
+})
+
+-- No Ping Toggle
+local noPing = false
+Tabs.Server:Toggle({
+    Title = "No Ping",
+    Default = false,
+    Callback = function(state)
+        noPing = state
+        if noPing then
+            -- Logic to hide ping (This only hides UI, not the actual ping)
+            game:GetService("Players").LocalPlayer.PlayerGui:SetVisible(false)  -- Example for hiding GUI elements
+        else
+            -- Restore the ping display if toggled off
+            game:GetService("Players").LocalPlayer.PlayerGui:SetVisible(true) -- Example to show GUI again
+        end
+    end
+})
+
+-- Auto-Hop on High Ping or Lag Toggle
+local autoHop = false
+Tabs.Server:Toggle({
+    Title = "Auto-Hop on High Ping",
+    Default = false,
+    Callback = function(state)
+        autoHop = state
+        if autoHop then
+            -- Auto-hop logic when ping is high
+            game:GetService("RunService").Heartbeat:Connect(function()
+                local currentPing = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]
+                if currentPing > 200 then  -- Set your own threshold (e.g., 200ms)
+                    -- Logic to switch servers (e.g., teleport to another random server)
+                    local servers = game:GetService("TeleportService"):GetServerPlaceAsync()
+                    local randomServer = servers[math.random(1, #servers)]
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(randomServer.PlaceId, randomServer)
+                end
+            end)
+        else
+            -- Disable Auto-Hop if the toggle is off
+        end
+    end
+})
+
+-- Anti-Kick Toggle
+local antiKick = false
+Tabs.Server:Toggle({
+    Title = "Anti Kick",
+    Default = false,
+    Callback = function(state)
+        antiKick = state
+        if antiKick then
+            -- Prevent idle kicks or other forms of kicks by keeping player active
+            game:GetService("Players").PlayerRemoving:Connect(function(player)
+                if player == game.Players.LocalPlayer then
+                    -- Keep the player alive by sending dummy input to avoid idle kick
+                    local userInputService = game:GetService("UserInputService")
+                    while antiKick do
+                        -- Send a dummy input to keep the player from being kicked
+                        userInputService.InputBegan:Fire() -- Simulating input
+                        wait(60) -- Preventing kick by mimicking actions every 60 seconds
+                    end
+                end
+            end)
+        else
+            -- Stop anti-kick functionality when toggled off
+        end
+    end
+})
+
+-- Anti-Ban Toggle
+local antiBan = false
+Tabs.Server:Toggle({
+    Title = "Anti Ban",
+    Default = false,
+    Callback = function(state)
+        antiBan = state
+        if antiBan then
+            -- Prevent chat bans by intercepting chat messages
+            game:GetService("Players").PlayerAdded:Connect(function(player)
+                if player == game.Players.LocalPlayer then
+                    -- Intercept messages to prevent banned words or actions
+                    local chatService = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
+                    chatService.OnMessageDoneFiltering.OnClientEvent:Connect(function(message)
+                        -- Example: Modify banned messages (e.g., change them or prevent them)
+                        if message == "ban" then
+                            message = "Safe Message" -- Replacing banned words
+                        end
+                    end)
+                end
+            end)
+        else
+            -- Restore normal chat behavior when anti-ban is disabled
+        end
+    end
+})
+
+-- Anti-Spam Kick/Ban Toggle
+local antiSpam = false
+Tabs.Server:Toggle({
+    Title = "Anti Spam (Kick/Ban)",
+    Default = false,
+    Callback = function(state)
+        antiSpam = state
+        if antiSpam then
+            -- Prevent spamming chat (if the player sends too many messages in a short time)
+            local lastMessageTime = 0
+            local messageCooldown = 2 -- Minimum time (in seconds) between messages to avoid spam
+
+            game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents").OnMessageDoneFiltering.OnClientEvent:Connect(function(message)
+                -- Get current time
+                local currentTime = tick()
+
+                -- Check if the player sent too many messages in a short period (spamming)
+                if currentTime - lastMessageTime < messageCooldown then
+                    -- If a message is sent too quickly, ignore it and prevent spammy behavior
+                    return -- Do nothing, avoid spamming detection
+                end
+
+                -- Otherwise, update the last message time
+                lastMessageTime = currentTime
+            end)
+
+            -- Optional: Add more complex checks for banning based on message patterns, etc.
+        else
+            -- Reset anti-spam behavior when toggled off
+            -- You can add logic to remove spam prevention or restore default behavior
+        end
+    end
+})
+
+local Tabs = {
+    Extras = Window:Tab({
+        Title = "Extras",
+        Icon = "star",
+        Desc = "Additional Fun Features"
+    })
+}
+
+-- **Extras Tab** - Only contains the "Load Autobuilder" button
+Tabs.Extras:Button({
+    Title = "Load Autobuilder",
+    Callback = function()
+        -- Load the Autobuilder script using the provided loadstring
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/Final/refs/heads/main/Final"))()
+        print("Autobuilder Loaded!")
+    end
+})
