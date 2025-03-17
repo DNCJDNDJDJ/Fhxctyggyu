@@ -114,6 +114,414 @@ AutoFarmTab:Toggle({
 })
 
 AutoFarmTab:Toggle({
+    Title = "AutoFarm Tween",
+    Default = false,
+    Callback = function(Value)
+        _G.FarmMoney = Value
+        if _G.FarmMoney then
+            -- Optimize Performance
+            local decalsyeeted = true
+            local g, w, l, t = game, game.Workspace, game.Lighting, game.Workspace.Terrain
+
+            sethiddenproperty(l, "Technology", 2)
+            sethiddenproperty(t, "Decoration", false)
+            t.WaterWaveSize, t.WaterWaveSpeed, t.WaterReflectance, t.WaterTransparency = 0, 0, 0, 0
+            l.GlobalShadows, l.FogEnd, l.Brightness = 0, 9e9, 0
+            settings().Rendering.QualityLevel = "Level01"
+
+            -- Apply Optimization
+            for _, v in pairs(w:GetDescendants()) do
+                if v:IsA("BasePart") and not v:IsA("MeshPart") then
+                    v.Material, v.Reflectance = "Plastic", 0
+                elseif (v:IsA("Decal") or v:IsA("Texture")) and decalsyeeted then
+                    v.Transparency = 1
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    v.Lifetime = NumberRange.new(0)
+                elseif v:IsA("Explosion") then
+                    v.BlastPressure, v.BlastRadius = 1, 1
+                elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+                    v.Enabled = false
+                elseif v:IsA("MeshPart") and decalsyeeted then
+                    v.Material, v.Reflectance, v.TextureID = "Plastic", 0, 10385902758728957
+                end
+            end
+
+            -- Farming Logic
+            while _G.FarmMoney do
+                if game:GetService("Players").LocalPlayer.Data.Gold.Value <= 10000 then
+                    normalfarm()
+                else
+                    Gold()
+                end
+                task.wait(5)
+            end
+        end
+    end
+})
+
+-- Normal Farming Function
+function normalfarm()
+    while _G.FarmMoney do
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-59.148, 65.990, 825.943)
+        wait(0.1)
+        Tween1(CFrame.new(-48.322, 34.004, 8803.812))
+        wait(22)
+        Tween1(CFrame.new(-55.558, -359.302, 9495.745))
+        wait(3)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-55.558, -359.302, 9495.745)
+        wait(20)
+    end
+end
+
+-- Gold Farming Function
+function Gold()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-59.148, 65.990, 825.943)
+    wait(0.1)
+    Tween2(CFrame.new(-48.322, 34.004, 8803.812))
+    wait(2.3)
+    Tween2(CFrame.new(-55.558, -359.302, 9495.745))
+    wait(20)
+end
+
+-- Tween Functions
+function Tween1(P)
+    local Distance = (P.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    local speed = 370
+    game:GetService("TweenService"):Create(
+        game.Players.LocalPlayer.Character.HumanoidRootPart,
+        TweenInfo.new(Distance / speed, Enum.EasingStyle.Linear),
+        { CFrame = P }
+    ):Play()
+end
+
+function Tween2(P)
+    local Distance = (P.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    local speed = 3500
+    game:GetService("TweenService"):Create(
+        game.Players.LocalPlayer.Character.HumanoidRootPart,
+        TweenInfo.new(Distance / speed, Enum.EasingStyle.Linear),
+        { CFrame = P }
+    ):Play()
+end
+
+-- Services & Variables
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+_G.FarmMoney = false
+
+-- Default Slider Values
+local ChestWaitTime = 1.9
+local TeleportForward = 825
+local TeleportUpDown = 63.44
+local TeleportLeftRight = -34.82
+local AutoFarmRestartTime = 17
+local FlySpeed = 390
+local GravityValue = 1 -- Default gravity
+
+-- Apply Gravity Dynamically
+local function SetGravity(value)
+    game.Workspace.Gravity = value
+end
+
+-- Teleport Function
+local function Teleport(x, y, z)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+    end
+end
+
+-- Apply Fly Speed using BodyVelocity
+local function ApplyFlySpeed(speed)
+    local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        -- Remove any existing BodyVelocity (if present)
+        local bodyVelocity = humanoidRootPart:FindFirstChild("BodyVelocity")
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+        end
+
+        -- Create new BodyVelocity for smoother movement
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000) -- High force to allow movement
+        bodyVelocity.Velocity = humanoidRootPart.CFrame.LookVector * (-speed) -- Move forward
+        bodyVelocity.Parent = humanoidRootPart
+    end
+end
+
+-- Remove BodyVelocity when movement should stop
+local function RemoveBodyVelocity()
+    local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        local bodyVelocity = humanoidRootPart:FindFirstChild("BodyVelocity")
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+        end
+    end
+end
+
+-- Start AutoFarm Function
+local function StartFarming()
+    while _G.FarmMoney do
+        -- 1️⃣ Teleport to the first location
+        Teleport(59.148, 65.990, 825.943)
+        task.wait(0.5)  
+
+        -- 2️⃣ Set gravity & Apply Flight Speed (Reapply after teleport)
+        SetGravity(GravityValue)
+        ApplyFlySpeed(FlySpeed)
+        task.wait(5)  
+
+        -- 3️⃣ Teleport to chest location
+        Teleport(-55.558, -359.302, 9495.745)
+        task.wait(ChestWaitTime)  
+
+        -- 4️⃣ Wait for chest collection
+        local TriggerChest = workspace.BoatStages.NormalStages.TheEnd.GoldenChest.Trigger
+        if TriggerChest then
+            TriggerChest.Touched:Wait()
+        end
+
+        -- 5️⃣ Teleport to **adjustable position**
+        Teleport(TeleportLeftRight, TeleportUpDown, TeleportForward)
+        SetGravity(GravityValue)  -- Set gravity again in case it resets
+        ApplyFlySpeed(FlySpeed) -- Reapply fly speed
+        task.wait(0.2)  -- Stabilize position
+
+        -- 6️⃣ **Teleport to the final position 3489**
+        Teleport(-34.82, 63.44, 3489.43)  -- This is the teleport you requested
+        SetGravity(GravityValue)  -- Set gravity
+        ApplyFlySpeed(FlySpeed) -- Apply fly speed again after teleport
+        task.wait(0.5) -- Stabilize position
+
+        -- 7️⃣ Wait before restarting the farm
+        task.wait(AutoFarmRestartTime)
+    end
+end
+
+-- Sliders for Adjustments
+AutoFarmTab:Slider({
+    Title = "Chest Wait Time",
+    Value = {Min = 0.5, Max = 5, Default = 1.9},
+    Callback = function(value)
+        ChestWaitTime = value
+        print("Chest wait time set to: " .. value)
+    end
+})
+
+AutoFarmTab:Slider({
+    Title = "Forward Teleport Distance - Speed afkFarm",
+    Value = {Min = 800, Max = 850, Default = 825},
+    Callback = function(value)
+        TeleportForward = value
+        print("Teleport forward distance set to: " .. value)
+    end
+})
+
+AutoFarmTab:Slider({
+    Title = "Vertical Position (Up/Down)",
+    Value = {Min = 50, Max = 150, Default = 63.44},
+    Callback = function(value)
+        TeleportUpDown = value
+        print("Vertical position set to: " .. value)
+    end
+})
+
+AutoFarmTab:Slider({
+    Title = "Horizontal Position (Left/Right) - Speed afkFarm",
+    Value = {Min = -100, Max = 100, Default = -34.82},
+    Callback = function(value)
+        TeleportLeftRight = value
+        print("Horizontal position set to: " .. value)
+    end
+})
+
+AutoFarmTab:Slider({
+    Title = "AutoFarm Restart Time - Speed afkFarm",
+    Value = {Min = 10, Max = 30, Default = 17},
+    Callback = function(value)
+        AutoFarmRestartTime = value
+        print("AutoFarm restart time set to: " .. value)
+    end
+})
+
+AutoFarmTab:Slider({
+    Title = "Gravity - Speed afkFarm",
+    Value = {Min = 0, Max = 100, Default = 1},
+    Callback = function(value)
+        GravityValue = value
+        SetGravity(value)
+        print("Gravity set to: " .. value)
+    end
+})
+
+AutoFarmTab:Slider({
+    Title = "Fly Speed - Speed afkFarm",
+    Value = {Min = 100, Max = 500, Default = 390},
+    Callback = function(value)
+        FlySpeed = value
+        print("Fly speed set to: " .. value)
+    end
+})
+
+-- AutoFarm Toggle Button
+AutoFarmTab:Toggle({
+    Title = "Start  Speed AutoFarm",
+    Default = false,
+    Callback = function(Value)
+        _G.FarmMoney = Value
+        if _G.FarmMoney then
+            WindUI:Notify({
+                Title = "AutoFarm Activated",
+                Content = "Gold farming has started!",
+                Icon = "check",
+                Duration = 5,
+            })
+            StartFarming()
+        else
+            WindUI:Notify({
+                Title = "AutoFarm Stopped",
+                Content = "Gold farming has been disabled.",
+                Icon = "x",
+                Duration = 5,
+            })
+        end
+    end
+})
+
+-- Services & Variables
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local _G = _G or {}
+_G.FarmMoney = false
+local Gravity = game.Workspace.Gravity
+
+-- Default Teleport Location
+local defaultTeleportPosition = Vector3.new(-43.148, 65.990, 825.943)  -- Default spawn location
+local flySpeed = 390  -- Flying speed
+local gravityValue = 1  -- Gravity set to 1
+
+-- Teleport Function
+local function Teleport(x, y, z)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+    end
+end
+
+-- Set Gravity Function
+local function SetGravity(value)
+    game.Workspace.Gravity = value
+end
+
+-- Reset Velocity to prevent unwanted movement after teleport
+local function ResetVelocity()
+    local HumanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if HumanoidRootPart then
+        HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+    end
+end
+
+-- Remove existing BodyVelocity if present
+local function RemoveBodyVelocity()
+    local HumanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if HumanoidRootPart then
+        local existingBV = HumanoidRootPart:FindFirstChild("BodyVelocity")
+        if existingBV then
+            existingBV:Destroy()
+        end
+    end
+end
+
+-- Apply Fly Speed Function (Forward in BABFT)
+local function ApplyFlySpeed(speed)
+    local HumanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if HumanoidRootPart then
+        RemoveBodyVelocity() -- Remove old movement force
+        
+        -- Create new BodyVelocity
+        local bv = Instance.new("BodyVelocity")
+        bv.Velocity = -HumanoidRootPart.CFrame.LookVector * speed -- Move forward in BABFT
+        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9) -- Apply strong force to ensure movement
+        bv.Parent = HumanoidRootPart
+    end
+end
+
+-- Infinite Gold Claiming Loop (Runs Forever)
+task.spawn(function()
+    while wait() do
+        pcall(function()
+            workspace:WaitForChild("ClaimRiverResultsGold"):FireServer()
+        end)
+    end
+end)
+
+-- AutoFarm Loop
+local function FarmingLoop()
+    while _G.FarmMoney do
+        -- Fire gold claim event
+        pcall(function()
+            workspace:WaitForChild("ClaimRiverResultsGold"):FireServer()
+        end)
+        
+        -- Teleport to default position
+        Teleport(defaultTeleportPosition.X, defaultTeleportPosition.Y, defaultTeleportPosition.Z)
+        
+        -- Reset velocity & stabilize position
+        ResetVelocity()
+        task.wait(0.2) -- Wait a bit before movement starts
+
+        -- Set gravity to 1 and apply fly speed for forward movement
+        SetGravity(gravityValue)
+        ApplyFlySpeed(flySpeed)
+
+        -- Wait 19 seconds, then force the player to die
+        task.wait(19)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.Health = 0 -- Kill the player
+        end
+
+        -- Wait for the player to respawn before restarting
+        LocalPlayer.CharacterAdded:Wait()
+        task.wait(1) -- Give a small delay before restarting
+    end
+end
+
+-- Restart AutoFarm When Player Dies
+LocalPlayer.CharacterAdded:Connect(function()
+    if _G.FarmMoney then
+        task.wait() -- Short delay after respawn
+        FarmingLoop() -- Restart AutoFarm after respawn
+    end
+end)
+
+-- Toggle AutoFarm
+AutoFarmTab:Toggle({
+    Title = "Start AutoFarm (NoChest)",
+    Default = false,
+    Callback = function(Value)
+        _G.FarmMoney = Value
+        if _G.FarmMoney then
+            WindUI:Notify({
+                Title = "AutoFarm Activated",
+                Content = "Loop Teleporting has started!",
+                Icon = "check",
+                Duration = 5,
+            })
+            task.spawn(FarmingLoop)  -- Start teleporting loop
+        else
+            WindUI:Notify({
+                Title = "AutoFarm Stopped",
+                Content = "Loop Teleporting has been disabled.",
+                Icon = "x",
+                Duration = 5,
+            })
+            RemoveBodyVelocity() -- Stop movement when toggled off
+            SetGravity(Gravity) -- Restore original gravity
+        end
+    end
+})
+
+AutoFarmTab:Toggle({
     Title = "Auto Claim Gold (get gold when farming)",
     Default = false,
     Callback = function(state)
