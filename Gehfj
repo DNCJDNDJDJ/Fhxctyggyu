@@ -7,9 +7,9 @@ local Lighting = game:GetService("Lighting")
 
 -- Creating the Window
 local Window = WindUI:CreateWindow({
-    Title = "LexusHub 1.1",
+    Title = "LexusHub 1.2",
     Icon = "wind",
-    Author = "MadedByKira |Discord| gg/9Mjf8YFbfb",
+    Author = "MadedByKira |Discord| 9Mjf8YFbfb",
     Folder = "BABFT_AutoFarm",
     Size = UDim2.fromOffset(500, 400),
     Transparent = false,
@@ -18,7 +18,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:EditOpenButton({
-    Title = "Open LexusHub",
+    Title = "Open LexusHub | Discord - 9Mjf8YFbfb",
     Icon = "menu",
     CornerRadius = UDim.new(0, 10),
     StrokeThickness = 2,
