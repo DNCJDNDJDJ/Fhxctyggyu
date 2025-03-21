@@ -39,7 +39,7 @@ local AutoFarmTab = Window:Tab({
 -- Global AutoFarm Settings
 getgenv().TreasureAutoFarm = {
     Enabled = false,
-    Teleport = 1, -- Delay between teleporting
+    Teleport = 0.1, -- Delay between teleporting
     TimeBetweenRuns = 5, -- Time to wait before restarting auto-farm
     SelectedChest = "Common Chest"
 }
@@ -163,7 +163,7 @@ AutoFarmTab:Toggle({
 function normalfarm()
     while _G.FarmMoney do
         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-59.148, 65.990, 825.943)
-        wait(0.1)
+        wait()
         Tween1(CFrame.new(-48.322, 34.004, 8803.812))
         wait(22)
         Tween1(CFrame.new(-55.558, -359.302, 9495.745))
@@ -468,7 +468,7 @@ local function FarmingLoop()
         
         -- Reset velocity & stabilize position
         ResetVelocity()
-        task.wait(0.2) -- Wait a bit before movement starts
+        task.wait() -- Wait a bit before movement starts
 
         -- Set gravity to 1 and apply fly speed for forward movement
         SetGravity(gravityValue)
