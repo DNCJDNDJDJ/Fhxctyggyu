@@ -448,7 +448,7 @@ end
 
 -- Infinite Gold Claiming Loop (Runs Forever)
 task.spawn(function()
-    while wait() do
+    while wait(3) do
         pcall(function()
             workspace:WaitForChild("ClaimRiverResultsGold"):FireServer()
         end)
