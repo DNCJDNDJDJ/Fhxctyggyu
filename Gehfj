@@ -92,6 +92,7 @@ local function autoFarm(currentRun)
     wait(getgenv().TreasureAutoFarm.TimeBetweenRuns)
     print("AutoFarm: Run " .. currentRun .. " completed")
 end
+
 local goldTrackerUI = nil
 
 -- Gold Tracker State
