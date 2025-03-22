@@ -112,7 +112,129 @@ AutoFarmTab:Toggle({
         end
     end
 })
+local clockTime = 0
+local running = false
+local totalGoldGained = 0
+local totalGoldBlock = 0
+local GoldPerHour = 0
+local trackerEnabled = false
+local ScreenGui = nil
+local StatsLabel = nil
 
+local player = game:GetService("Players").LocalPlayer
+local lastGoldValue = player.Data.Gold.Value
+local IGBLOCK = player.Data.GoldBlock.Value
+
+-- Time Formatting Function
+local function formatTime(seconds)
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local sec = seconds % 60
+    return string.format("%02d:%02d:%02d", hours, minutes, sec)
+end
+
+-- Function to Start the Timer
+local function startClock()
+    if running then return end
+    running = true
+    while running and trackerEnabled do
+        clockTime = clockTime + 1
+        task.wait(1)
+    end
+end
+
+-- Function to Update Stats
+local function updateStats()
+    while trackerEnabled do
+        local currentGold = player.Data.Gold.Value
+        local Ftime = formatTime(clockTime)
+        local goldGained = currentGold - lastGoldValue
+        totalGoldGained = totalGoldGained + goldGained
+
+        local currentGoldBlock = player.Data.GoldBlock.Value
+        totalGoldBlock = currentGoldBlock - IGBLOCK
+
+        GoldPerHour = (clockTime > 0) and ((totalGoldGained / clockTime) * 3600) or 0
+
+        -- Update GUI if it exists
+        if StatsLabel then
+            StatsLabel.Text = "Elapsed Time: " .. Ftime ..
+                              "\nGold Gained: " .. totalGoldGained ..
+                              "\nGold Blocks Gained: " .. totalGoldBlock ..
+                              "\nGold per Hour: " .. math.floor(GoldPerHour)
+        end
+
+        lastGoldValue = currentGold
+        task.wait(1)
+    end
+end
+
+-- Function to Create the GUI
+local function createGUI()
+    -- If the GUI already exists, don't create another
+    if ScreenGui then return end
+
+    ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Parent = game.CoreGui
+
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0, 250, 0, 150)
+    Frame.Position = UDim2.new(0.05, 0, 0.1, 0)
+    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Frame.BorderSizePixel = 2
+    Frame.Parent = ScreenGui
+
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, 0, 0, 25)
+    Title.BackgroundTransparency = 1
+    Title.Text = "Gold Tracker"
+    Title.TextSize = 18
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.Font = Enum.Font.SourceSansBold
+    Title.Parent = Frame
+
+    StatsLabel = Instance.new("TextLabel")
+    StatsLabel.Size = UDim2.new(1, 0, 1, -30)
+    StatsLabel.Position = UDim2.new(0, 0, 0, 30)
+    StatsLabel.BackgroundTransparency = 1
+    StatsLabel.TextSize = 14
+    StatsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    StatsLabel.TextWrapped = true
+    StatsLabel.Text = "Loading..."
+    StatsLabel.Font = Enum.Font.SourceSans
+    StatsLabel.Parent = Frame
+end
+
+-- Function to Remove the GUI
+local function removeGUI()
+    if ScreenGui then
+        ScreenGui:Destroy()
+        ScreenGui = nil
+        StatsLabel = nil
+    end
+end
+
+-- WindUI Toggle Button to Show/Hide the Tracker (Inside AutoFarm Tab)
+Tabs.AutoFarmTab:Toggle({
+    Title = "Enable Gold Tracker",
+    Default = false,
+    Callback = function(state)
+        trackerEnabled = state
+        if trackerEnabled then
+            -- Reset stats when starting
+            clockTime = 0
+            totalGoldGained = 0
+            totalGoldBlock = 0
+            running = false
+            createGUI() -- Show the GUI
+            task.spawn(startClock) -- Start the clock
+            task.spawn(updateStats) -- Start updating stats
+        else
+            running = false
+            removeGUI() -- Hide the GUI
+        end
+    end
+})
 AutoFarmTab:Toggle({
     Title = "AutoFarm Tween",
     Default = false,
