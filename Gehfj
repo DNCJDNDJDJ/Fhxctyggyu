@@ -92,7 +92,123 @@ local function autoFarm(currentRun)
     wait(getgenv().TreasureAutoFarm.TimeBetweenRuns)
     print("AutoFarm: Run " .. currentRun .. " completed")
 end
+local goldTrackerUI = nil
 
+-- Gold Tracker State
+local trackerEnabled = false
+
+-- Timer and Gold Stats
+local clockTime = 0
+local running = false
+local totalGoldGained = 0
+local totalGoldBlock = 0
+local GoldPerHour = 0
+
+local player = game:GetService("Players").LocalPlayer
+local lastGoldValue = player.Data.Gold.Value
+local IGBLOCK = player.Data.GoldBlock.Value
+
+-- Time Formatting Function
+local function formatTime(seconds)
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local sec = seconds % 60
+    return string.format("%02d:%02d:%02d", hours, minutes, sec)
+end
+
+-- Create Gold Tracker UI
+local function createGoldTrackerUI()
+    -- Avoid creating multiple instances of the tracker UI
+    if goldTrackerUI then return end
+
+    goldTrackerUI = Instance.new("ScreenGui")
+    goldTrackerUI.Parent = game.CoreGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 250, 0, 150)
+    frame.Position = UDim2.new(0.05, 0, 0.1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 2
+    frame.Parent = goldTrackerUI
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 25)
+    title.BackgroundTransparency = 1
+    title.Text = "Gold Tracker"
+    title.TextSize = 18
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.SourceSansBold
+    title.Parent = frame
+
+    local statsLabel = Instance.new("TextLabel")
+    statsLabel.Size = UDim2.new(1, 0, 1, -30)
+    statsLabel.Position = UDim2.new(0, 0, 0, 30)
+    statsLabel.BackgroundTransparency = 1
+    statsLabel.TextSize = 14
+    statsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    statsLabel.TextWrapped = true
+    statsLabel.Text = "Loading..."
+    statsLabel.Font = Enum.Font.SourceSans
+    statsLabel.Parent = frame
+
+    return statsLabel
+end
+
+-- Update Stats Function
+local function updateStats(statsLabel)
+    while trackerEnabled do
+        local currentGold = player.Data.Gold.Value
+        local Ftime = formatTime(clockTime)
+        local goldGained = currentGold - lastGoldValue
+        totalGoldGained = totalGoldGained + goldGained
+
+        local currentGoldBlock = player.Data.GoldBlock.Value
+        totalGoldBlock = currentGoldBlock - IGBLOCK
+
+        GoldPerHour = (clockTime > 0) and ((totalGoldGained / clockTime) * 3600) or 0
+
+        -- Update the Gold Tracker Stats
+        statsLabel.Text = "Elapsed Time: " .. Ftime ..
+                          "\nGold Gained: " .. totalGoldGained ..
+                          "\nGold Blocks Gained: " .. totalGoldBlock ..
+                          "\nGold per Hour: " .. math.floor(GoldPerHour)
+
+        lastGoldValue = currentGold
+        task.wait(1)
+    end
+end
+
+-- Start Timer for Gold Tracker
+local function startGoldTrackerTimer()
+    if running then return end
+    running = true
+    while running and trackerEnabled do
+        clockTime = clockTime + 1
+        task.wait(1)
+    end
+end
+
+-- Toggle for AutoFarm (with Gold Tracker)
+AutoFarmTab:Toggle({
+    Title = "Enable Gold Tracker",
+    Default = false,
+    Callback = function(state)
+        trackerEnabled = state
+        if trackerEnabled then
+            -- Initialize the Gold Tracker UI
+            local statsLabel = createGoldTrackerUI()
+            task.spawn(startGoldTrackerTimer) -- Start Timer
+            task.spawn(updateStats, statsLabel) -- Start updating stats
+        else
+            -- Disable the tracker and hide the GUI
+            running = false
+            if goldTrackerUI then
+                goldTrackerUI:Destroy()
+                goldTrackerUI = nil
+            end
+        end
+    end
+})
 -- Toggle AutoFarm in AutoFarm Tab
 AutoFarmTab:Toggle({
     Title = "🚜Enable AutoFarm",
