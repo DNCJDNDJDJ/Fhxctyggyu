@@ -7,7 +7,7 @@ local Lighting = game:GetService("Lighting")
 
 -- Creating the Window
 local Window = WindUI:CreateWindow({
-    Title = "LexusHub 1.2.1",
+    Title = "LexusHub 1.3",
     Icon = "wind",
     Author = "MadedByKira |Discord| 9Mjf8YFbfb",
     Folder = "BABFT_AutoFarm",
@@ -112,6 +112,7 @@ AutoFarmTab:Toggle({
         end
     end
 })
+
 local clockTime = 0
 local running = false
 local totalGoldGained = 0
@@ -235,6 +236,7 @@ Tabs.AutoFarmTab:Toggle({
         end
     end
 })
+
 AutoFarmTab:Toggle({
     Title = "AutoFarm Tween",
     Default = false,
