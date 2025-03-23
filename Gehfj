@@ -1064,97 +1064,112 @@ local QuestTab = Window:Tab({
     Desc = "Automatically complete quests."
 })
 
--- List of available quests
-local quests = {
-    "Target Quest",
-    "Football - Wip"
-}
+local function StartQuest(quest)
+    workspace.QuestMakerEvent:FireServer(quest)
+end
 
--- List of teams
-local teams = {
-    "Red Team",
-    "Blue Team",
-    "Yellow Team",
-    "White Team",
-    "Black Team",
-    "Magenta Team",
-    "Green Team"
-}
-
--- Quest Target Locations
-local questTargets = {
-    ["Target Quest"] = {
-        ["Red Team"] = Vector3.new(104.88, 141.98, -68.10),
-        ["Blue Team"] = Vector3.new(104.95, 141.04, 291.04),
-        ["Yellow Team"] = Vector3.new(209.81, 143.43, 643.03),
-        ["White Team"] = Vector3.new(51.43, 140.95, 228.36),
-        ["Black Team"] = Vector3.new(209.91, 145.44, 73.85),
-        ["Magenta Team"] = Vector3.new(105.10, 141.53, 649.25),
-        ["Green Team"] = Vector3.new(210.82, 142.38, 284.76)
-    },
-    ["Football Quest"] = Vector3.new(120.32, 140.50, 350.40) -- Example Goal Position
-}
-
-local TweenService = game:GetService("TweenService")
-local player = game.Players.LocalPlayer
-
--- Function to teleport smoothly
-local function teleportToQuest()
-    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local selectedQuest = getgenv().SelectedQuest or "Target Quest"
-        local selectedTeam = getgenv().SelectedTeam or "Red Team"
-
-        local targetPosition
-        
-        if selectedQuest == "Target Quest" then
-            targetPosition = questTargets["Target Quest"][selectedTeam]
-        else
-            targetPosition = questTargets[selectedQuest]
-        end
-        
-        if targetPosition then
-            local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-            local tween = TweenService:Create(player.Character.HumanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
-            tween:Play()
-
-            -- UI Notification
-            game.StarterGui:SetCore("SendNotification", {
-                Title = "Teleporting...",
-                Text = "Auto-completing " .. selectedQuest,
-                Duration = 3
-            })
+local function StopVel()
+    for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Velocity, v.RotVelocity = Vector3.new(), Vector3.new()
         end
     end
 end
 
--- Dropdown to select quest
-QuestTab:Dropdown({
-    Title = "Select Quest",
-    Values = quests,
-    Callback = function(selected)
-        getgenv().SelectedQuest = selected
+local function TpChar(cf)
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf
+end
+
+-- Cloud Quest
+Tabs.QuestTab:Button({
+    Title = "Auto Complete Cloud Quest",
+    Desc = "Automatically completes the Cloud quest",
+    Callback = function()
+        local OldPos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+        StartQuest(1)
+        wait(0.5)
+        local CloudCFrame = game:GetService("Workspace").WhiteZone.Quest.Cloud.Part1.CFrame
+        TpChar(CloudCFrame)
+        wait(1)
+        TpChar(OldPos)
+        StopVel()
+        Notify("Quest Complete", "Cloud Quest Completed!", 3)
     end
 })
 
--- Dropdown to select team
-QuestTab:Dropdown({
-    Title = "Select Team",
-    Values = teams,
-    Callback = function(selected)
-        getgenv().SelectedTeam = selected
+-- Target Quest
+Tabs.QuestTab:Button({
+    Title = "Auto Complete Target Quest",
+    Desc = "Automatically completes the Target quest",
+    Callback = function()
+        local OldPos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+        StartQuest(2)
+        wait(0.5)
+        local TargetCFrame = CFrame.new(-53.5, 141.01, -223)
+        TpChar(TargetCFrame)
+        wait(1)
+        TpChar(OldPos)
+        StopVel()
+        Notify("Quest Complete", "Target Quest Completed!", 3)
     end
 })
 
--- Toggle to auto-complete the quest
-QuestTab:Toggle({
-    Title = "Auto Complete Quest",
-    Default = false,
-    Callback = function(state)
-        getgenv().AutoQuest = state
-        while getgenv().AutoQuest do
-            teleportToQuest()
-            wait(5) -- Wait 5 seconds before teleporting again
+-- Soccer Quest
+Tabs.QuestTab:Button({
+    Title = "Help Complete Soccer Quest",
+    Desc = "Helps move the soccer ball to complete the quest",
+    Callback = function()
+        StartQuest(8)
+        wait(0.5)
+        local TargetCFrame = CFrame.new(2.64, -9.9, -371.88)
+        TpChar(TargetCFrame)
+        StopVel()
+        local SoccerBall = game:GetService("Workspace").WhiteZone.Quest.Soccer1.SoccerBall
+        SoccerBall.Transparency = 0.5
+        SoccerBall.CanCollide = false 
+        SoccerBall.Massless = true
+        Notify("Quest Complete", "Soccer Quest Helped!", 3)
+    end
+})
+
+-- Ramp Quest
+Tabs.QuestTab:Button({
+    Title = "Auto Complete Ramp Quest",
+    Desc = "Automatically completes the Ramp quest",
+    Callback = function()
+        local VIM = game:GetService("VirtualInputManager")
+        local OldPos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+        local SafeSpotPos = CFrame.new(-50.24, -9.9, -491.67)
+        TpChar(SafeSpotPos)
+        StartQuest(3)
+        wait(0.5)
+        local CircleCFrame = CFrame.new(-48.81, 57.62, -224.42)
+        TpChar(CircleCFrame)
+        VIM:SendKeyEvent(true, Enum.KeyCode.W, false, nil)
+        wait(1)
+        VIM:SendKeyEvent(false, Enum.KeyCode.W, false, nil)
+        TpChar(OldPos)
+        StopVel()
+        Notify("Quest Complete", "Ramp Quest Completed!", 3)
+    end
+})
+
+-- Find Me Quest
+Tabs.QuestTab:Button({
+    Title = "Auto Complete Find Me Quest",
+    Desc = "Automatically completes the Find Me quest",
+    Callback = function()
+        local OldPos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+        StartQuest(4)
+        wait(0.5)
+        local ButterCFrame = game:GetService("Workspace").WhiteZone.Quest.Butter.PPart.CFrame
+        for _ = 1, 5 do
+            TpChar(ButterCFrame)
+            fireclickdetector(game:GetService("Workspace").WhiteZone.Quest.Butter.PPart.ClickDetector)
+            wait(2.5)
         end
+        TpChar(OldPos)
+        Notify("Quest Complete", "Find Me Quest Completed!", 3)
     end
 })
 
