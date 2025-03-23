@@ -1058,33 +1058,6 @@ PlayerTab:Toggle({
     end
 })
 
--- Load WindUI
-local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
-
--- Create Window
-local Window = WindUI:CreateWindow({
-    Title = "BABFT - Quest Hub",
-    Icon = "flag",
-    Author = "Lexus",
-    Folder = "QuestHub",
-    Size = UDim2.fromOffset(580, 460),
-    Transparent = true,
-    Theme = "Dark",
-    SideBarWidth = 200,
-})
-
--- Open Button
-Window:EditOpenButton({
-    Title = "Open QuestHub",
-    Icon = "menu",
-    CornerRadius = UDim.new(0, 10),
-    StrokeThickness = 2,
-    Color = ColorSequence.new(
-        Color3.fromHex("4CAF50"), 
-        Color3.fromHex("8BC34A")
-    ),
-    Draggable = true,
-})
 
 -- Quest Tab
 local Tabs = {
