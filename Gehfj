@@ -5,6 +5,8 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/LexusGui/refs/heads/main/NglKindaBasket"))()
+
 -- Creating the Window
 local Window = WindUI:CreateWindow({
     Title = "LexusHub 1.3.5",
