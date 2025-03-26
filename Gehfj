@@ -786,7 +786,7 @@ Tabs.ImageLoaderTab:Button({
 
 Tabs.ImageLoaderTab:Button({
     Title = "Load Autobuild lol",
-    Desc = "Click to execute Imageloader",
+    Desc = "Click to execute Autobuilder",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/LexusGui/refs/heads/main/NglKindaBasket"))()
     end
