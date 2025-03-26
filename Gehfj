@@ -1,5 +1,7 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/-/refs/heads/main/%E2%80%A61"))()
 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/LexusGui/refs/heads/main/NglKindaBasket"))()
+
 local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Workspace = game:GetService("Workspace")
@@ -1514,5 +1516,3 @@ Tabs.Extras:Button({
     end
 })
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/LexusGui/refs/heads/main/NglKindaBasket"))()
-})
