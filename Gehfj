@@ -773,7 +773,7 @@ AutoFarmTab:Button({
 })
 
 local Tabs = {
-    ImageLoaderTab = Window:Tab({ Title = "ImageLoader", Icon = "image", Desc = "Load and view images." }),
+    ImageLoaderTab = Window:Tab({ Title = "Image/Build", Icon = "image", Desc = "Load and view images." }),
 }
 
 Tabs.ImageLoaderTab:Button({
@@ -784,11 +784,17 @@ Tabs.ImageLoaderTab:Button({
     end
 })
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/LexusGui/refs/heads/main/NglKindaBasket"))()
+Tabs.ImageLoaderTab:Button({
+    Title = "LoadImageLoader",
+    Desc = "Click to execute Imageloader",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/LexusGui/refs/heads/main/NglKindaBasket"))()
+    end
+})
 
 -- Teams Tab
 local TeamsTab = Window:Tab({
-    Title = "Teams",
+    Title = "Teleports",
     Icon = "group",
     Desc = "Teleport to different teams."
 })
@@ -816,14 +822,7 @@ TeamsTab:Dropdown({
     end
 })
 
--- Stages Tab
-local StageTab = Window:Tab({
-    Title = "Stages",
-    Icon = "zap",
-    Desc = "Teleport to different stages."
-})
-
-local stageLocations = {
+local TeleportLocations = {
     ["Stage 1"] = Vector3.new(-54.14, 55.94, 1390.75),
     ["Stage 2"] = Vector3.new(-13.16, 51.93, 2156.50),
     ["Stage 3"] = Vector3.new(-17.75, 53.51, 2922.12),
@@ -836,7 +835,7 @@ local stageLocations = {
 }
 
 -- Create Stages Dropdown
-StageTab:Dropdown({
+TeamsTab:Dropdown({
     Title = "Select Stage",  -- Title of the dropdown
     Values = {"Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6", "Stage 7", "Stage 8", "Stage 9"},
     Value = "Stage 1",  -- Default value
