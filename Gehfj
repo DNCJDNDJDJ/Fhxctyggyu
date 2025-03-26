@@ -7,7 +7,7 @@ local Lighting = game:GetService("Lighting")
 
 -- Creating the Window
 local Window = WindUI:CreateWindow({
-    Title = "LexusHub 1.3.5",
+    Title = "LexusHub 1.3.7",
     Icon = "wind",
     Author = "MadedByKira |Discord| 9Mjf8YFbfb",
     Folder = "BABFT_AutoFarm",
