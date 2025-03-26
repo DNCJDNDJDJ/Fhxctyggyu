@@ -1514,3 +1514,5 @@ Tabs.Extras:Button({
     end
 })
 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/102KIRA/LexusGui/refs/heads/main/NglKindaBasket"))()
+
