@@ -15,6 +15,17 @@ local Window = WindUI:CreateWindow({
     Transparent = false,
     Theme = "Dark",
     SideBarWidth = 150,
+    
+        KeySystem = { 
+        Key = { "lexushubisthebest2025" },
+        Note = "Join the server for key(DontLeave)",
+        -- Thumbnail = {
+        --     Image = "rbxassetid://18220445082", -- rbxassetid only
+        --     Title = "Thumbnail"
+        -- },
+        URL = "https://discord.gg/2gRPvkg54g", -- remove this if the key is not obtained from the link.
+        SaveKey = true, -- optional
+    },
 })
 
 Window:EditOpenButton({
